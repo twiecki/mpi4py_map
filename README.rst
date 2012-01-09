@@ -1,5 +1,7 @@
 Provides a map() interface to mpi4py.
+
 License: MIT
+
 Copywrite (c) 2012 Thomas Wiecki (thomas.wiecki[at]gmail.com)
 
 About
@@ -23,7 +25,7 @@ Create a python file (e.g. mpi_square.py):
 
 ::
 
-    from mpi4py import map_async
+    from mpi4py_map import map_async
     print map_async(lambda x, y: x**y, [1,2,3,4])
 
 Then call your program with mpirun, e.g.:
