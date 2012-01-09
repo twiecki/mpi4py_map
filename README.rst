@@ -7,9 +7,9 @@ Copyright (c) 2012 Thomas Wiecki (thomas.wiecki[at]gmail.com)
 About
 *****
 
-MPI (Message Passing Interface) is a library that allows processes running on different hosts to communicate and exchange information. It is ideally suited for parallel computations. mpi4py provides a convenient python wrapper for this library. However, it still a pretty bare exposition of MPI functions which requires you to code most of the interprocess-communication by hand. Other parallel options such as the multiprocessing package (which only allows process management on the same host) have more simple interfaces. For example, you can create a worker pool use the map() function to easily parallelize evaluations of a your function over a given sequence (e.g. pool.map(lambda x: x**2, range(500))).
+MPI (Message Passing Interface) is a library that allows processes running on different hosts to communicate and exchange information. It is ideally suited for parallel computations on a cluster. mpi4py provides a convenient python wrapper for this library. However, it still a pretty bare exposition of MPI functions which requires you to code most of the interprocess-communication by hand. Other parallel python libraries such as the multiprocessing package (which only allows process management on a single host) have more simple interfaces. For example, you can create a worker pool and use the map() function to easily parallelize evaluations of your function over a given sequence (e.g. pool.map(lambda x: x**2, range(500)) will square the list in parallel).
 
-mpi4py_map provides this simple but powerful map() function for mpi4py. It takes care of assigning the jobs to the workers, queueing if all workers are busy and cleanly shutting down all workers after the job is complete.
+mpi4py_map brings this simple but powerful map() functionality to mpi4py. It takes care of assigning the jobs to the workers, queueing if all workers are busy and cleanly shutting down all workers after the job is complete.
 
 Dependencies
 ************
