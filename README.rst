@@ -2,7 +2,7 @@ Provides a map() interface to mpi4py.
 
 License: MIT
 
-Copywrite (c) 2012 Thomas Wiecki (thomas.wiecki[at]gmail.com)
+Copyright (c) 2012 Thomas Wiecki (thomas.wiecki[at]gmail.com)
 
 About
 *****
