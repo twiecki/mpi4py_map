@@ -26,7 +26,7 @@ Create a python file (e.g. mpi_square.py):
 ::
 
     from mpi4py_map import map_async
-    print map_async(lambda x, y: x**y, [1,2,3,4])
+    print map_async(lambda x, y: x**y, [1,2,3,4], args=(2,)) # square the sequence
 
 Then call your program with mpirun, e.g.:
 
