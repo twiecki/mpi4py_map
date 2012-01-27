@@ -19,7 +19,7 @@ import sys
 
 from mpi4py import MPI
 
-def map_async(function, sequence, args=None, debug=False):
+def map(function, sequence, args=None, debug=False):
     """Return a list of the results of applying the function in
     parallel (using mpi4py) to each element in sequence.
 
@@ -44,7 +44,7 @@ def map_async(function, sequence, args=None, debug=False):
         return result
     else:
         # Worker
-        _mpi_worker(function, args=args, debug=debug)
+        _mpi_worker(function, sequence, args=args, debug=debug)
 
 def _mpi_controller(sequence, args=None, debug=False):
     """Controller function that sends each element in sequence to
@@ -68,10 +68,13 @@ def _mpi_controller(sequence, args=None, debug=False):
 
     process_list = range(1, MPI.COMM_WORLD.Get_size())
     workers_done = []
-    results = []
+    results = {}
     if debug: print "Data:", sequence
 
-    queue = iter(sequence)
+    # Instead of distributing the actual elements, we just distribute
+    # the index as the workers already have the sequence. This allows
+    # objects to be used as well.
+    queue = iter(xrange(len(sequence)))
 
     if debug: print "Controller %i on %s: ready!" % (rank, proc_name)
 
@@ -86,7 +89,8 @@ def _mpi_controller(sequence, args=None, debug=False):
             # tag 1 codes for initialization.
             # tag 10 codes for requesting more data.
             if status.tag == 10: # data received
-                results.append(recv) # save back
+                if debug: print "Controller: Job %i completed by %i" % (recv[0], status.source)
+                results[recv[0]] = recv[1] # save back
 
             # Get next item and send to worker
             try:
@@ -99,31 +103,36 @@ def _mpi_controller(sequence, args=None, debug=False):
                 # Send kill signal
                 if debug:
                     print "Controller: Task queue is empty"
-                    print workers_done
                 workers_done.append(status.source)
                 MPI.COMM_WORLD.send([], dest=status.source, tag=2)
 
                 # Task queue is empty
-                if set(workers_done) == set(process_list):
+                if len(process_list) == 0:
                     break
-                else:
-                    continue
 
         # Tag 2 codes for a worker exiting.
         elif status.tag == 2:
-            if debug:
-                print 'Process %i exited, removing.' % status.source
-                print 'Processes left over: ' + str(process_list)
+            if debug: print 'Process %i exited, removing.' % status.source
             process_list.remove(status.source)
+            if debug: print 'Processes left over: ' + str(process_list)
+            # Task queue is empty
+            if len(process_list) == 0:
+                break
 
         else:
             print 'Unkown tag %i with msg %s' % (status.tag, str(recv))
 
-        if len(process_list) == 0:
-            if debug: print "All workers done."
-            return results
+    if len(process_list) == 0:
+        if debug: print "All workers done."
+        sorted_results = [results[i] for i in range(len(sequence))]
+        if debug: print sorted_results
+        return sorted_results
+    else:
+        raise IOError("Something went wrong, workers still active")
+        print process_list
+        return False
 
-def _mpi_worker(function, args=None, debug=False):
+def _mpi_worker(function, sequence, args=None, debug=False):
     """Worker that applies function to each element it receives from
     the controller.
 
@@ -165,21 +174,21 @@ def _mpi_worker(function, args=None, debug=False):
             # Call function on received element
             if debug: print "Worker %i on %s: Calling function %s with %s" % (rank, proc_name, function.__name__, recv)
             if args is None:
-                result = function(recv)
+                result = function(sequence[recv])
             else:
-                result = function(recv, *args)
-            if debug: print("Worker %i on %s: finished one job" % (rank, proc_name))
-            # Return result to controller
-            MPI.COMM_WORLD.send(result, dest=0, tag=10)
+                result = function(sequence[recv], *args)
+            if debug: print("Worker %i on %s: finished job %i" % (rank, proc_name, recv))
+            # Return sequence number and result to controller
+            MPI.COMM_WORLD.send((recv, result), dest=0, tag=10)
 
 def _power(x, y=2):
     return x**y
 
 def test_map_async():
     import numpy as np
-    result_parallel = map_async(_power, range(50), args=(2,), debug=True)
-    result_serial = map(_power, range(50))
-    assert np.all(result_serial == sorted(result_parallel)), "Parallel result does not match direct one."
+    result_parallel = map(_power, range(50), args=(2,), debug=True)
+    result_serial = [_power(i) for i in range(50)]
+    assert np.all(result_serial == result_parallel), "Parallel result does not match direct one."
     return sorted(result_parallel)
 
 if __name__ == "__main__":
