@@ -19,7 +19,7 @@ import sys
 
 from mpi4py import MPI
 
-def map(function, sequence, args=None, debug=False):
+def map(function, sequence, *args, **kwargs):
     """Return a list of the results of applying the function in
     parallel (using mpi4py) to each element in sequence.
 
@@ -40,13 +40,13 @@ def map(function, sequence, args=None, debug=False):
 
     if rank == 0:
         # Controller
-        result = _mpi_controller(sequence, args=args, debug=debug)
+        result = _mpi_controller(sequence, *args, **kwargs)
         return result
     else:
         # Worker
-        _mpi_worker(function, sequence, args=args, debug=debug)
+        _mpi_worker(function, sequence, *args, **kwargs)
 
-def _mpi_controller(sequence, args=None, debug=False):
+def _mpi_controller(sequence, *args, **kwargs):
     """Controller function that sends each element in sequence to
     different workers. Handles queueing and job termination.
 
@@ -61,6 +61,10 @@ def _mpi_controller(sequence, args=None, debug=False):
             Be very verbose (for debugging purposes).
 
     """
+    debug = 'debug' in kwargs
+    if debug:
+        del kwargs['debug']
+
     rank = MPI.COMM_WORLD.Get_rank()
     assert rank == 0, "rank has to be 0."
     proc_name = MPI.Get_processor_name()
@@ -132,7 +136,7 @@ def _mpi_controller(sequence, args=None, debug=False):
         print process_list
         return False
 
-def _mpi_worker(function, sequence, args=None, debug=False):
+def _mpi_worker(function, sequence, *args, **kwargs):
     """Worker that applies function to each element it receives from
     the controller.
 
@@ -148,6 +152,10 @@ def _mpi_worker(function, sequence, args=None, debug=False):
             Be very verbose (for debugging purposes).
 
     """
+    debug = 'debug' in kwargs
+    if debug:
+        del kwargs['debug']
+
     rank = MPI.COMM_WORLD.Get_rank()
     assert rank != 0, "rank is 0 which is reserved for the controller."
     proc_name = MPI.Get_processor_name()
@@ -173,10 +181,9 @@ def _mpi_worker(function, sequence, args=None, debug=False):
         if status.tag == 10:
             # Call function on received element
             if debug: print "Worker %i on %s: Calling function %s with %s" % (rank, proc_name, function.__name__, recv)
-            if args is None:
-                result = function(sequence[recv])
-            else:
-                result = function(sequence[recv], *args)
+
+            result = function(sequence[recv], *args, **kwargs)
+
             if debug: print("Worker %i on %s: finished job %i" % (rank, proc_name, recv))
             # Return sequence number and result to controller
             MPI.COMM_WORLD.send((recv, result), dest=0, tag=10)
@@ -184,13 +191,13 @@ def _mpi_worker(function, sequence, args=None, debug=False):
 def _power(x, y=2):
     return x**y
 
-def test_map_async():
+def test_map():
     import numpy as np
-    result_parallel = map(_power, range(50), args=(2,), debug=True)
+    result_parallel = map(_power, range(50), y=2, debug=True)
     result_serial = [_power(i) for i in range(50)]
     assert np.all(result_serial == result_parallel), "Parallel result does not match direct one."
-    return sorted(result_parallel)
+    return result_parallel
 
 if __name__ == "__main__":
-    result = test_map_async()
+    result = test_map()
     print result
