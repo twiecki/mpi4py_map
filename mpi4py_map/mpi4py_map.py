@@ -194,7 +194,7 @@ def _power(x, y=2):
 def test_map():
     import numpy as np
     result_parallel = map(_power, range(50), y=2, debug=True)
-    result_serial = [_power(i) for i in range(50)]
+    result_serial = [_power(i, y=2) for i in range(50)]
     assert np.all(result_serial == result_parallel), "Parallel result does not match direct one."
     return result_parallel
 
