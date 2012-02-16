@@ -182,7 +182,14 @@ def _mpi_worker(function, sequence, *args, **kwargs):
             # Call function on received element
             if debug: print "Worker %i on %s: Calling function %s with %s" % (rank, proc_name, function.__name__, recv)
 
-            result = function(sequence[recv], *args, **kwargs)
+            try:
+                result = function(sequence[recv], *args, **kwargs)
+            except Exception as e:
+                # Send to master that we are quitting
+                MPI.COMM_WORLD.send([], dest=0, tag=2)
+                # Reraise exception
+                raise e
+
 
             if debug: print("Worker %i on %s: finished job %i" % (rank, proc_name, recv))
             # Return sequence number and result to controller
