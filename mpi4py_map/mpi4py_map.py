@@ -116,6 +116,11 @@ def _mpi_controller(sequence, *args, **kwargs):
 
         # Tag 2 codes for a worker exiting.
         elif status.tag == 2:
+            if recv != []:
+                # Worker seems to have crashed but was nice enough to
+                # send us the item number he has been working on
+                results[recv[0]] = recv[1] # save back
+
             if debug: print 'Process %i exited, removing.' % status.source
             process_list.remove(status.source)
             if debug: print 'Processes left over: ' + str(process_list)
@@ -186,25 +191,11 @@ def _mpi_worker(function, sequence, *args, **kwargs):
                 result = function(sequence[recv], *args, **kwargs)
             except Exception as e:
                 # Send to master that we are quitting
-                MPI.COMM_WORLD.send([], dest=0, tag=2)
+                MPI.COMM_WORLD.send((recv, None), dest=0, tag=2)
                 # Reraise exception
                 raise e
-
 
             if debug: print("Worker %i on %s: finished job %i" % (rank, proc_name, recv))
             # Return sequence number and result to controller
             MPI.COMM_WORLD.send((recv, result), dest=0, tag=10)
 
-def _power(x, y=2):
-    return x**y
-
-def test_map():
-    import numpy as np
-    result_parallel = map(_power, range(50), y=2, debug=True)
-    result_serial = [_power(i, y=2) for i in range(50)]
-    assert np.all(result_serial == result_parallel), "Parallel result does not match direct one."
-    return result_parallel
-
-if __name__ == "__main__":
-    result = test_map()
-    print result
