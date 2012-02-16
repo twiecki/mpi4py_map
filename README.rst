@@ -11,12 +11,17 @@ MPI (Message Passing Interface) is a library that allows processes running on di
 
 mpi4py_map brings this simple but powerful map() functionality to mpi4py. It takes care of assigning the jobs to the workers, queueing if all workers are busy and cleanly shutting down all workers after the job is complete.
 
+Features
+********
+
+* Easy, transparent parallelization of your Python code on a PC or cluster.
+* Sequential items do not have to be serializable.
+
 Dependencies
 ************
 
 * MPI (OpenMPI or MPICH2)
 * mpi4py (http://mpi4py.scipy.org/)
-* NumPy (optional, for testing)
 
 Usage
 *****
@@ -25,8 +30,8 @@ Create a python file (e.g. mpi_square.py):
 
 ::
 
-    from mpi4py_map import map_async
-    print map_async(lambda x, y: x**y, [1,2,3,4], args=(2,)) # square the sequence
+    from mpi4py_map import map
+    print map(lambda x, y: x**y, [1,2,3,4], 2) # square the sequence
 
 Then call your program with mpirun, e.g.:
 
