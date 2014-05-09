@@ -4,6 +4,13 @@ License: MIT
 
 Copyright (c) 2012 Thomas Wiecki (thomas.wiecki[at]gmail.com)
 
+Depracation warning
+*******************
+
+You probably do not want to use this as there are much better alternatives like IPython parallel. See here for a blog post in which I describe my current setup: http://twiecki.github.io/blog/2014/02/24/ipython-nb-cluster/
+
+The code might be instructive on how to use MPI4Py however.
+
 About
 *****
 

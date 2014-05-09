@@ -189,11 +189,11 @@ def _mpi_worker(function, sequence, *args, **kwargs):
 
             try:
                 result = function(sequence[recv], *args, **kwargs)
-            except Exception as e:
+            except:
                 # Send to master that we are quitting
                 MPI.COMM_WORLD.send((recv, None), dest=0, tag=2)
                 # Reraise exception
-                raise e
+                raise
 
             if debug: print("Worker %i on %s: finished job %i" % (rank, proc_name, recv))
             # Return sequence number and result to controller
