@@ -8,11 +8,11 @@ Usage
 
 Create a python file (e.g. mpi_square.py):
 
-from mpi4py import map_async
-print map_async(lambda x, y: x**y, [1,2,3,4])
+from mpi4py_map import map
+print map(lambda x, y: x**y, [1,2,3,4], 2)
 
 Then call the function with mpirun, e.g.:
-mpi4run -n 4 mpi_square.py
+mpirun -n 4 mpi_square.py
 """
 
 import sys
